@@ -25,8 +25,6 @@ import datetime
 import uuid
 import os
 import auth_client
-import gzip
-import contextlib
 import hashlib
 
 
@@ -112,14 +110,6 @@ class Data:
                 src_ids.add(item["Measurement"])
         return src_ids
 
-    @contextlib.contextmanager
-    def __open(self, path: str, mode: str):
-        file = open(path, mode) if not self.__compression else gzip.open(path, mode, compresslevel=4)
-        try:
-            yield file
-        finally:
-            file.close()
-
     def create(self, source_id: str, time_field: str, delimiter: str) -> models.DataItem:
         data_item = models.DataItem()
         data_item.source_id = source_id
@@ -159,8 +149,8 @@ class Data:
             line_map = dict()
             for x in range(len(data_item.columns)):
                 line_map[x] = data_item.columns[x]
-            with self.__open(os.path.join(self.__data_path, data_item.file), "wb") as file:
                 file.write("{}\n".format(data_item.delimiter.join(data_item.columns)).encode())
+            with open(os.path.join(self.__data_path, data_item.file), "wb") as file:
                 _range = range(len(data_item.columns))
                 for chunk in chunks:
                     with open(os.path.join(self.__tmp_path, chunk), "rb") as chunk_file:
