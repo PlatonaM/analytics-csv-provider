@@ -52,7 +52,7 @@ ac_logger.addHandler(handler)
 
 simple_env_var.loadConfig(conf)
 
-logger = logging.getLogger("trainer")
+logger = logging.getLogger("csv-provider")
 logger.propagate = False
 logger.addHandler(handler)
 
