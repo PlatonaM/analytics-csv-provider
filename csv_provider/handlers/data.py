@@ -18,7 +18,7 @@ __all__ = ("Data",)
 
 
 from ..logger import getLogger
-from .. import models
+from .. import models, util
 import requests
 import json
 import datetime
@@ -118,6 +118,7 @@ class Data:
         data_item.sources = dict()
         data_item.default_values = dict()
         data_item.file = uuid.uuid4().hex
+        data_item.compressed = self.__compression
         start_year = self.__start_year
         chunks = list()
         columns = set()
@@ -149,14 +150,17 @@ class Data:
             line_map = dict()
             for x in range(len(data_item.columns)):
                 line_map[x] = data_item.columns[x]
-                file.write("{}\n".format(data_item.delimiter.join(data_item.columns)).encode())
             with open(os.path.join(self.__data_path, data_item.file), "wb") as file:
+                if self.__compression:
+                    file = util.Compress(file)
+                header = "{}\n".format(data_item.delimiter.join(data_item.columns)).encode()
+                file.write(header)
                 _range = range(len(data_item.columns))
+                _line = list()
                 for chunk in chunks:
                     with open(os.path.join(self.__tmp_path, chunk), "rb") as chunk_file:
                         for line in chunk_file:
                             line = json.loads(line.strip())
-                            _line = list()
                             for x in _range:
                                 try:
                                     value = str(line[line_map[x]])
@@ -166,8 +170,17 @@ class Data:
                                     except KeyError:
                                         value = str()
                                 _line.append(value)
-                            file.write("{}\n".format(data_item.delimiter.join(_line)).encode())
+                            line = "{}\n".format(data_item.delimiter.join(_line)).encode()
+                            file.write(line)
+                            _line.clear()
             self.purge_tmp(chunks)
+            checksum = hashlib.sha256()
+            with open(os.path.join(self.__data_path, data_item.file), "rb") as file:
+                buffer = file.read(65536)
+                while buffer:
+                    checksum.update(buffer)
+                    buffer = file.read(65536)
+            data_item.checksum = checksum.hexdigest()
             data_item.created = "{}Z".format(datetime.datetime.utcnow().isoformat())
             return data_item
         except Exception as ex:
