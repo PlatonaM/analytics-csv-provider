@@ -47,7 +47,6 @@ class Conf:
     class Jobs:
         max_num = 5
         check = 5
-        skd_delay = 43200
 
     @simple_env_var.section
     class Auth:
