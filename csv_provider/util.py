@@ -19,6 +19,13 @@ __all__ = ("Compress", )
 
 import zlib
 import typing
+import os
+
+
+def init_storage(paths: tuple):
+    for path in paths:
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
 class Compress:

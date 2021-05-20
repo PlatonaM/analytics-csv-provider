@@ -18,12 +18,14 @@ from csv_provider.logger import initLogger
 from csv_provider.configuration import conf
 from csv_provider import handlers
 from csv_provider import api
+from csv_provider import util
 import auth_client
 import falcon
 
 
 initLogger(conf.Logger.level)
 
+util.init_storage((conf.Storage.db_path, conf.Storage.tmp_path, conf.Storage.data_path))
 
 auth_handler = auth_client.Client(
     url=conf.Auth.api_url,
