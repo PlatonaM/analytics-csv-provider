@@ -273,7 +273,7 @@ _Retrieve the training data associated with the data resource._
 
     # Example    
     
-    curl --output training_data http://localhost:6002/data/urn:infai:ses:service:c2872437-3e53-49c6-a5be-bf264d52430d/file
+    curl --output training_data http://<host>/data/urn:infai:ses:service:c2872437-3e53-49c6-a5be-bf264d52430d/file
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                      Dload  Upload   Total   Spent    Left  Speed
     100 19.4M  100 19.4M    0     0  29.5M      0 --:--:-- --:--:-- --:--:-- 29.5M
