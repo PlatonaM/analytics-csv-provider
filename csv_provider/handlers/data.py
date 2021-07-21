@@ -167,7 +167,7 @@ class Data:
                 chunk_count = 0
                 for chunk in chunks:
                     chunk_count += 1
-                    logger.debug("{}: reading chunk {}/{} ...".format(data_item.file, chunk_count, len(chunks)))
+                    logger.debug("reading chunk {}/{} for file '{}' ...".format(chunk_count, len(chunks), data_item.file))
                     with open(os.path.join(self.__tmp_path, chunk), "rb") as chunk_file:
                         for line in chunk_file:
                             line = json.loads(line.strip())
