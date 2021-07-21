@@ -36,7 +36,7 @@ logger = getLogger(__name__.split(".", 1)[-1])
 
 
 def handle_sigterm(signo, stack_frame):
-    logger.debug("\ngot signal '{}' - exiting ...\n".format(signo))
+    logger.debug("got signal '{}' - exiting ...".format(signo))
     sys.exit(0)
 
 
