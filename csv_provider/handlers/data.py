@@ -60,18 +60,25 @@ class Data:
     def __execute_query(self, measurement: str, sort: str, **kwargs):
         kwargs["measurement"] = measurement
         kwargs["columns"] = [{"name": "data"}, {"name": "default_values"}]
-        resp = requests.post(
-            url="{}?format=table&order_direction={}&order_column_index=0&time_format={}".format(
-                self.__db_api_url,
-                sort,
-                self.__db_api_time_format
-            ),
-            headers={"X-UserId": self.__usr_id, "Authorization": "Bearer " + self.__auth_handler.get_access_token()},
-            json=[kwargs]
-        )
-        if not resp.ok:
-            raise RuntimeError(resp.status_code)
-        return resp.json()
+        retries = 0
+        while True:
+            try:
+                resp = requests.post(
+                    url="{}?format=table&order_direction={}&order_column_index=0&time_format={}".format(
+                        self.__db_api_url,
+                        sort,
+                        self.__db_api_time_format
+                    ),
+                    headers={"X-UserId": self.__usr_id, "Authorization": "Bearer " + self.__auth_handler.get_access_token()},
+                    json=[kwargs]
+                )
+                if not resp.ok:
+                    raise RuntimeError(resp.status_code)
+                return resp.json()
+            except Exception as ex:
+                if retries >= 5:
+                    raise ex
+                retries += 1
 
     def __get_start_timestamp(self, measurement: str) -> str:
         return self.__execute_query(measurement=measurement, sort="asc", limit=1)[0][0]
