@@ -27,27 +27,43 @@ import uuid
 import datetime
 import json
 import time
+import multiprocessing
+import signal
+import sys
 
 
 logger = getLogger(__name__.split(".", 1)[-1])
 
 
-class Worker(threading.Thread):
-    def __init__(self, job: models.Job, db_handler: handlers.DB, data_handler: handlers.Data):
+def handle_sigterm(signo, stack_frame):
+    logger.debug("\ngot signal '{}' - exiting ...\n".format(signo))
+    sys.exit(0)
+
+
+class Result:
+    def __init__(self):
+        self.data_item: typing.Optional[models.DataItem] = None
+        self.job: typing.Optional[models.Job] = None
+        self.error = False
+
+
+class Worker(multiprocessing.Process):
+    def __init__(self, job: models.Job, data_item: models.DataItem, data_handler: handlers.Data):
         super().__init__(name="jobs-worker-{}".format(job.id), daemon=True)
-        self.__db_handler = db_handler
+        self.__data_item = data_item
         self.__data_handler = data_handler
         self.__job = job
-        self.done = False
+        self.result = multiprocessing.Queue()
 
     def run(self) -> None:
+        signal.signal(signal.SIGTERM, handle_sigterm)
+        signal.signal(signal.SIGINT, handle_sigterm)
+        result_obj = Result()
         try:
             logger.debug("starting job '{}' ...".format(self.__job.id))
             self.__job.status = models.JobStatus.running
-            data_item = models.DataItem(json.loads(self.__db_handler.get(b"data-", self.__job.source_id.encode())))
-            old_file = data_item.file
-            data_item = self.__data_handler.create(data_item.source_id, data_item.time_field, data_item.delimiter)
-            self.__db_handler.put(b"data-", data_item.source_id.encode(), json.dumps(dict(data_item)).encode())
+            old_file = self.__data_item.file
+            result_obj.data_item = self.__data_handler.create(self.__data_item.source_id, self.__data_item.time_field, self.__data_item.delimiter)
             if old_file:
                 try:
                     self.__data_handler.remove(old_file)
@@ -59,8 +75,9 @@ class Worker(threading.Thread):
             self.__job.status = models.JobStatus.failed
             self.__job.reason = str(ex)
             logger.error("{}: failed - {}".format(self.__job.id, ex))
-        self.__db_handler.put(b"jobs-", self.__job.id.encode(), json.dumps(dict(self.__job)).encode())
-        self.done = True
+            result_obj.error = True
+        result_obj.job = self.__job
+        self.result.put(result_obj)
 
 
 class Jobs(threading.Thread):
@@ -102,7 +119,7 @@ class Jobs(threading.Thread):
                         job_id = self.__job_queue.get(timeout=self.__check_delay)
                         worker = Worker(
                             job=self.__job_pool[job_id],
-                            db_handler=self.__db_handler,
+                            data_item=models.DataItem(json.loads(self.__db_handler.get(b"data-", self.__job_pool[job_id].source_id.encode()))),
                             data_handler=self.__data_handler
                         )
                         self.__worker_pool[job_id] = worker
@@ -112,7 +129,12 @@ class Jobs(threading.Thread):
                 else:
                     time.sleep(self.__check_delay)
                 for job_id in list(self.__worker_pool.keys()):
-                    if self.__worker_pool[job_id].done:
+                    if not self.__worker_pool[job_id].is_alive():
+                        res = self.__worker_pool[job_id].result.get()
+                        self.__db_handler.put(b"jobs-", res.job.id.encode(), json.dumps(dict(res.job)).encode())
+                        if not res.error:
+                            self.__db_handler.put(b"data-", res.data_item.source_id.encode(), json.dumps(dict(res.data_item)).encode())
+                        self.__worker_pool[job_id].close()
                         del self.__worker_pool[job_id]
                         del self.__job_pool[job_id]
                         # self.__db_handler.delete(b"jobs-", job_id.encode())
