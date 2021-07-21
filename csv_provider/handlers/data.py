@@ -164,7 +164,10 @@ class Data:
                 file.write(header)
                 _range = range(len(data_item.columns))
                 _line = list()
+                chunk_count = 0
                 for chunk in chunks:
+                    chunk_count += 1
+                    logger.debug("{}: reading chunk {}/{} ...".format(data_item.file, chunk_count, len(chunks)))
                     with open(os.path.join(self.__tmp_path, chunk), "rb") as chunk_file:
                         for line in chunk_file:
                             line = json.loads(line.strip())
