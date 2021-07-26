@@ -44,7 +44,7 @@ def gen_year_map(start: int, end: int, base: int):
 
 
 class Data:
-    def __init__(self, auth_handler: auth_client.Client, data_path: str, tmp_path: str, db_api_url: str, export_api_url: str, time_format: str, db_api_time_format: str, start_year: int, chunk_size: int, usr_id: str, compression: bool):
+    def __init__(self, auth_handler: auth_client.Client, data_path: str, tmp_path: str, db_api_url: str, export_api_url: str, time_format: str, db_api_time_format: str, start_year: int, chunk_size: int, usr_id: str, compression: bool, single_header: bool):
         self.__auth_handler = auth_handler
         self.__data_path = data_path
         self.__tmp_path = tmp_path
@@ -56,6 +56,7 @@ class Data:
         self.__chunk_size = chunk_size
         self.__usr_id = usr_id
         self.__compression = compression
+        self.__single_header = single_header
 
     def __execute_query(self, measurement: str, sort: str, **kwargs):
         kwargs["measurement"] = measurement
@@ -124,7 +125,7 @@ class Data:
         data_item.delimiter = delimiter
         data_item.sources = dict()
         data_item.default_values = dict()
-        data_item.file = uuid.uuid4().hex
+        data_item.files = list()
         data_item.compressed = self.__compression
         start_year = self.__start_year
         chunks = list()
@@ -157,17 +158,20 @@ class Data:
             line_map = dict()
             for x in range(len(data_item.columns)):
                 line_map[x] = data_item.columns[x]
-            with open(os.path.join(self.__data_path, data_item.file), "wb") as file:
-                if self.__compression:
-                    file = util.Compress(file)
-                header = "{}\n".format(data_item.delimiter.join(data_item.columns)).encode()
-                file.write(header)
-                _range = range(len(data_item.columns))
-                _line = list()
-                chunk_count = 0
-                for chunk in chunks:
-                    chunk_count += 1
-                    logger.debug("reading chunk {}/{} for file '{}' ...".format(chunk_count, len(chunks), data_item.file))
+            _range = range(len(data_item.columns))
+            _line = list()
+            chunk_count = 0
+            for chunk in chunks:
+                chunk_count += 1
+                logger.debug("reading chunk {}/{} ...".format(chunk_count, len(chunks)))
+                file_name = uuid.uuid4().hex
+                with open(os.path.join(self.__data_path, file_name), "wb") as file:
+                    data_item.files.append(file_name)
+                    if self.__compression:
+                        file = util.Compress(file)
+                    if chunk_count == 1 or not self.__single_header:
+                        header = "{}\n".format(data_item.delimiter.join(data_item.columns)).encode()
+                        file.write(header)
                     with open(os.path.join(self.__tmp_path, chunk), "rb") as chunk_file:
                         for line in chunk_file:
                             line = json.loads(line.strip())
@@ -185,18 +189,20 @@ class Data:
                             _line.clear()
             self.purge_tmp(chunks)
             checksum = hashlib.sha256()
-            with open(os.path.join(self.__data_path, data_item.file), "rb") as file:
-                buffer = file.read(65536)
-                while buffer:
-                    checksum.update(buffer)
+            for _file in data_item.files:
+                with open(os.path.join(self.__data_path, _file), "rb") as file:
                     buffer = file.read(65536)
+                    while buffer:
+                        checksum.update(buffer)
+                        buffer = file.read(65536)
             data_item.checksum = checksum.hexdigest()
             data_item.created = "{}Z".format(datetime.datetime.utcnow().isoformat())
             return data_item
         except Exception as ex:
             self.purge_tmp(chunks)
             try:
-                os.remove(os.path.join(self.__data_path, data_item.file))
+                for file in data_item.files:
+                    os.remove(os.path.join(self.__data_path, file))
             except Exception:
                 pass
             raise ex

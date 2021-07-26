@@ -45,7 +45,8 @@ data_handler = handlers.Data(
     start_year=conf.Data.start_year,
     chunk_size=conf.Data.chunk_size,
     usr_id=conf.Auth.user_id,
-    compression=conf.Data.compression
+    compression=conf.Data.compression,
+    single_header=conf.Data.single_header
 )
 jobs_handler = handlers.Jobs(
     db_handler=db_handler,
@@ -61,7 +62,7 @@ app.req_options.strip_url_path_trailing_slash = True
 routes = (
     ("/data", api.DataCollection(db_handler=db_handler)),
     ("/data/{source_id}", api.DataResource(db_handler=db_handler, data_handler=data_handler)),
-    ("/data/{source_id}/file", api.CSV(db_handler=db_handler, data_handler=data_handler)),
+    ("/data/{source_id}/files/{file}", api.CSV(db_handler=db_handler, data_handler=data_handler)),
     ("/jobs", api.Jobs(db_handler=db_handler, jobs_handler=jobs_handler)),
     ("/jobs/{job_id}", api.Job(db_handler=db_handler, jobs_handler=jobs_handler))
 )

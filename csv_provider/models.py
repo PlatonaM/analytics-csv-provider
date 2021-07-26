@@ -49,6 +49,6 @@ class DataItem:
     created: str = None
     columns: list = None
     default_values: dict = None
-    file: str = None
+    files: list = None
     checksum = None
     compressed = None

@@ -92,11 +92,12 @@ class DataResource:
         try:
             data_item = models.DataItem(json.loads(self.__db_handler.get(b"data-", source_id.encode())))
             self.__db_handler.delete(b"data-", source_id.encode())
-            if data_item.file:
-                try:
-                    self.__data_handler.remove(data_item.file)
-                except Exception:
-                    pass
+            if data_item.files:
+                for file in data_item.files:
+                    try:
+                        self.__data_handler.remove(file)
+                    except Exception:
+                        pass
             resp.status = falcon.HTTP_200
         except KeyError as ex:
             resp.status = falcon.HTTP_404
@@ -111,12 +112,12 @@ class CSV:
         self.__db_handler = db_handler
         self.__data_handler = data_handler
 
-    def on_get(self, req: falcon.request.Request, resp: falcon.response.Response, source_id: str):
+    def on_get(self, req: falcon.request.Request, resp: falcon.response.Response, source_id: str, file: str):
         reqDebugLog(req)
         try:
             data_item = models.DataItem(json.loads(self.__db_handler.get(b"data-", source_id.encode())))
-            if data_item.file:
-                resp.stream, resp.content_length = self.__data_handler.open(data_item.file)
+            if file in data_item.files:
+                resp.stream, resp.content_length = self.__data_handler.open(file)
                 resp.content_type = "application/octet-stream"
                 resp.status = falcon.HTTP_200
             else:
