@@ -42,6 +42,7 @@ class Conf:
         start_year = 1970
         chunk_size = 50000
         compression = True
+        single_header = False
 
     @simple_env_var.section
     class Jobs:
