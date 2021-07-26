@@ -26,6 +26,7 @@ import uuid
 import os
 import auth_client
 import hashlib
+import time
 
 
 logger = getLogger(__name__.split(".", 1)[-1])
@@ -128,6 +129,7 @@ class Data:
         data_item.files = list()
         data_item.compressed = self.__compression
         start_year = self.__start_year
+        base_name = uuid.uuid4().hex
         chunks = list()
         columns = set()
         try:
@@ -164,7 +166,7 @@ class Data:
             for chunk in chunks:
                 chunk_count += 1
                 logger.debug("reading chunk {}/{} ...".format(chunk_count, len(chunks)))
-                file_name = uuid.uuid4().hex
+                file_name = "{}_{}".format(base_name, time.time()).replace(".", "")
                 with open(os.path.join(self.__data_path, file_name), "wb") as file:
                     data_item.files.append(file_name)
                     if self.__compression:
