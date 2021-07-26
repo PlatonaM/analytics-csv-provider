@@ -65,11 +65,14 @@ class Worker(multiprocessing.Process):
             old_files = self.__data_item.files
             result_obj.data_item = self.__data_handler.create(self.__data_item.source_id, self.__data_item.time_field, self.__data_item.delimiter)
             if old_files:
-                for old_file in old_files:
-                    try:
-                        self.__data_handler.remove(old_file)
-                    except Exception as ex:
-                        logger.warning("{}: could not remove old file - {}".format(self.__job.id, ex))
+                try:
+                    for old_file in old_files:
+                        try:
+                            self.__data_handler.remove(old_file)
+                        except Exception as ex:
+                            logger.warning("{}: could not remove old file '{}' - {}".format(self.__job.id, old_file, ex))
+                except Exception as ex:
+                    logger.warning("{}: could not remove old files - {}".format(self.__job.id, ex))
             self.__job.status = models.JobStatus.finished
             logger.debug("{}: completed successfully".format(self.__job.id))
         except Exception as ex:
