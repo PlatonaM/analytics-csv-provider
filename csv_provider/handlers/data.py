@@ -189,6 +189,7 @@ class Data:
                             line = "{}\n".format(data_item.delimiter.join(_line)).encode()
                             file.write(line)
                             _line.clear()
+                        file.flush()
             self.purge_tmp(chunks)
             checksum = hashlib.sha256()
             for _file in data_item.files:
