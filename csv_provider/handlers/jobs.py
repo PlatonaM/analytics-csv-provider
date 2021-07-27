@@ -62,7 +62,10 @@ class Worker(multiprocessing.Process):
         try:
             logger.debug("starting job '{}' ...".format(self.__job.id))
             self.__job.status = models.JobStatus.running
-            old_files = self.__data_item.files
+            try:
+                old_files = self.__data_item.files
+            except Exception:
+                old_files = None
             result_obj.data_item = self.__data_handler.create(self.__data_item.source_id, self.__data_item.time_field, self.__data_item.delimiter)
             if old_files:
                 try:
