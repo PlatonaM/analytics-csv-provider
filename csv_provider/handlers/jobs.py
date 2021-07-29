@@ -144,6 +144,5 @@ class Jobs(threading.Thread):
                         self.__worker_pool[job_id].close()
                         del self.__worker_pool[job_id]
                         del self.__job_pool[job_id]
-                        # self.__db_handler.delete(b"jobs-", job_id.encode())
             except Exception as ex:
                 logger.error("job handling failed - {}".format(ex))
