@@ -52,4 +52,3 @@ class DataItem:
     files: list = None
     checksum = None
     compressed = None
-    file: str = None
