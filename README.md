@@ -61,7 +61,7 @@ Creates training data for device types from multiple data sources. Training data
         "created": <string>,
         "columns": <object>,
         "default_values": <object>,
-        "file": <string>,
+        "files": <array>,
         "checksum": <string>,
         "compressed": <boolean>
     }
@@ -393,7 +393,7 @@ _Retrieve the training data (chunked) associated with the data resource._
 
     # Example    
     
-    curl --output training_data http://<host>/data/urn:infai:ses:service:c2872437-3e53-49c6-a5be-bf264d52430d/files/adb607144c474b459865793f2f1351a7_16273920334791317
+    curl --output training_data_chunk http://<host>/data/urn:infai:ses:service:c2872437-3e53-49c6-a5be-bf264d52430d/files/adb607144c474b459865793f2f1351a7_16273920334791317
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                      Dload  Upload   Total   Spent    Left  Speed
     100 5114k  100 5114k    0     0  27.2M      0 --:--:-- --:--:-- --:--:-- 27.4M
