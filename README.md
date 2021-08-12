@@ -30,6 +30,8 @@ Creates training data for device types from multiple data sources. Training data
 
 `CONF_DATA_COMPRESSION`: Enable or disable compression of training data.
 
+`CONF_DATA_SINGLE_HEADER`: If enabled only the first chunk will include a header.
+
 `CONF_AUTH_API_URL`: URL of authorization API.
 
 `CONF_AUTH_CLIENT_ID`: Client ID required by the authorization API. **(required)**
